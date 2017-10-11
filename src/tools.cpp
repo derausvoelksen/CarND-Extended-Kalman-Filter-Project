@@ -1,6 +1,6 @@
 #include <iostream>
 #include "tools.h"
-
+#define eps 1e-4
 using Eigen::VectorXd;
 using Eigen::MatrixXd;
 using std::vector;
@@ -42,35 +42,35 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
 }
 
 MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {
-  /**
-  TODO:
-    * Calculate a Jacobian here.
-  */
-  
-  //taken form lessons
-  MatrixXd Hj(3, 4);
-  //recover state parameters
-  float px = x_state(0);
-  float py = x_state(1);
-  float vx = x_state(2);
-  float vy = x_state(3);
+    MatrixXd Hj(3,4);
 
-  //pre-compute a set of terms to avoid repeated calculation
-  float c1 = px * px + py * py;
-  float c2 = sqrt(c1);
-  float c3 = (c1 * c2);
+    double px = x_state(0);
+    double py = x_state(1);
+    double vx = x_state(2);
+    double vy = x_state(3);
 
-  //check division by zero
-  if (fabs(c1) < 0.0001){
-      cout << "CalculateJacobian () - Error - Division by Zero" << endl;
-      return Hj;
-  }
+    double ps = sqrt(px * px + py * py);
+    double p2 = px * px + py * py;
+    double p3 = ps * ps * ps;
 
-  //compute the Jacobian matrix
-  Hj << (px / c2), (py / c2), 0, 0,
-      -(py / c1), (px / c1), 0, 0,
-      py*(vx*py - vy*px) / c3, px*(px*vy - py*vx) / c3, px / c2, py / c2;
+    if (ps < eps) {
+        return Hj;
+    }
+    //compute the Jacobian matrix
+    Hj << px / ps, py / ps, 0, 0,
+            -py / (p2), px / (p2), 0, 0,
+            (py * (vx * py - vy * px)) / p3, (px * (vy * px - vx * py)) / p3, px / ps, py / ps;
 
-  return Hj;
-    
+    return Hj;
+}
+
+VectorXd Tools::FromCartesian(const VectorXd &x) {
+    cout <<"X: " <<x <<endl;
+
+    VectorXd z = VectorXd(3);
+    double rho = sqrt(x[0] * x[0] + x[1] * x[1]);
+    z << rho, atan2(x[1], x[0]), (x[0] * x[2] + x[1] * x[3]) / rho;
+    cout <<"Z: " <<z <<endl;
+
+    return z;
 }
